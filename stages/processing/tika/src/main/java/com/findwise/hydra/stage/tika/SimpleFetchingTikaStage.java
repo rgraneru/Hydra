@@ -19,34 +19,42 @@ import com.findwise.hydra.stage.ProcessException;
 import com.findwise.hydra.stage.RequiredArgumentMissingException;
 import com.findwise.hydra.stage.Stage;
 import com.findwise.hydra.stage.tika.utils.TikaUtils;
+import java.io.InputStream;
+import java.net.*;
 
 @Stage(description = "A stage that fetches the content from a given url and appends it the the document")
 public class SimpleFetchingTikaStage extends AbstractProcessStage {
 
 	@Parameter(description = "The field name pattern that should be matched where urls will be found. First group plus \"_\" will be used as field prefix. Example: \"attachment_(.*)\" will match for example attachment_a and will use \"a_\" as prefix")
 	private String urlFieldPattern = null;
-       
 	@Parameter(name = "addMetaData", description = "Add the metadata to the document or not. Defaults to true")
-    private boolean addMetaData = true;
-	
+	private boolean addMetaData = true;
 	@Parameter(description = "Set to true, will also do language detection and add the field 'prefix_language' according to the prefix rules. Defaults to true")
 	private boolean addLanguage = true;
-	
+	@Parameter(description = "Username to use for basic authentication")
+	private String username = null;
+	@Parameter(description = "Password to use for basic authentication")
+	private String password = null;
 	private Parser parser = new AutoDetectParser();
 
 	@Override
 	public void process(LocalDocument doc) throws ProcessException {
-		
+
 		Map<String, Object> urls = TikaUtils.getFieldMatchingPattern(doc,
 				urlFieldPattern);
 		for (String field : urls.keySet()) {
 			try {
 				Iterator<URL> it = TikaUtils.getUrlsFromObject(urls.get(field)).iterator();
-				for(int i=1; it.hasNext(); i++) {
-					String num = (i>1) ? ""+i : "";
+				for (int i = 1; it.hasNext(); i++) {
+					String num = (i > 1) ? "" + i : "";
 					URL url = it.next();
+					HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+					if (username != null && password != null) {
+						TikaUtils.addBasicAuthentication(username, password, connection);
+					}
+					InputStream inputStream = (InputStream) connection.getInputStream();
 					TikaUtils.enrichDocumentWithFileContents(doc, field + num + "_",
-							url.openStream(), parser, addMetaData, addLanguage);
+							inputStream, parser, addMetaData, addLanguage);
 				}
 			} catch (URISyntaxException e) {
 				throw new ProcessException("A field matching the pattern " + field
@@ -57,7 +65,7 @@ public class SimpleFetchingTikaStage extends AbstractProcessStage {
 				throw new ProcessException("Failed parsing document", e);
 			} catch (TikaException e) {
 				throw new ProcessException("Got exception from Tika", e);
-			} 
+			}
 		}
 
 	}
@@ -71,8 +79,9 @@ public class SimpleFetchingTikaStage extends AbstractProcessStage {
 		Logger.debug("Initiated SimpleTikaStage");
 	}
 
-	/* For testing purposes */
-
+	/*
+	 * For testing purposes
+	 */
 	void setUrlFieldPattern(String urlFieldPattern) {
 		this.urlFieldPattern = urlFieldPattern;
 	}
@@ -81,4 +90,19 @@ public class SimpleFetchingTikaStage extends AbstractProcessStage {
 		this.parser = parser;
 	}
 
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
 }

@@ -27,6 +27,8 @@ import org.xml.sax.SAXException;
 
 import com.findwise.hydra.common.Logger;
 import com.findwise.hydra.local.LocalDocument;
+import java.net.*;
+import org.apache.commons.codec.binary.Base64;
 
 public class TikaUtils {
 
@@ -183,5 +185,15 @@ public class TikaUtils {
 			list.set(i, filterInvalidChars(list.get(i)));
 		}
 		return list;
+	}
+
+	/**
+	 * Adds basic authentication to the http connection
+	 */
+	public static void addBasicAuthentication(String username, String password, HttpURLConnection connection) {
+			String authString = username + ":" + password;
+			byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+			String authStringEnc = new String(authEncBytes);
+			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
 	}
 }
