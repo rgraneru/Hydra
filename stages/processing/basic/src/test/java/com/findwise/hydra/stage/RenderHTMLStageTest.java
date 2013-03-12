@@ -23,6 +23,30 @@ public class RenderHTMLStageTest {
 	}
 
 	@Test
+	public void testProcessEmptyField() throws Exception {
+		InputStream is = RenderHTMLStageTest.class.getResourceAsStream("/htmlDocument.html");
+		StringWriter writer = new StringWriter();
+		IOUtils.copy(is, writer, "utf-8");
+		String htmlString = writer.toString();
+
+		RenderHTMLStage instance = new RenderHTMLStage();
+
+        List<String> inputFields = new LinkedList<String>();
+        inputFields.add("html");
+        inputFields.add("body");
+        instance.setFields(inputFields);
+
+		LocalDocument ld = new LocalDocument();
+		
+		instance.init();
+		instance.process(ld);
+
+		//Only really want to test that it doesn't throw a nullpointer when inputfields are empty
+		Assert.assertFalse(htmlString.equals(ld.getContentField("html")));
+		Assert.assertFalse(htmlString.equals(ld.getContentField("body")));
+	}
+
+	@Test
 	public void testProcessSettingOnlyOneInputField() throws Exception {
 		InputStream is = RenderHTMLStageTest.class.getResourceAsStream("/htmlDocument.html");
 		StringWriter writer = new StringWriter();
