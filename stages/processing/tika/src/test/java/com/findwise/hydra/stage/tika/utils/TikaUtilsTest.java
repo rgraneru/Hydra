@@ -199,4 +199,14 @@ public class TikaUtilsTest {
 		Assert.assertEquals("broken", TikaUtils.filterInvalidChars(list).get(2));
 		Assert.assertEquals("string with NUL", TikaUtils.filterInvalidChars(list).get(3));
 	}
+	
+	@Test
+	public void testFixStrangeEncoding() throws Exception{
+		String strangeString = "http://dstest01.tine.no:81/Drift/TineKvalDok.nsf/0/A846E44615A41FDFC125710A00432CAC/$FILE/HACCP+Flytskjema+kj%25C3%25B8kken.pdf";
+		URL url = new URL(strangeString);
+		URL fixedUrl = TikaUtils.fixStrangeNorwegianEncodingErrors(url);
+		String fixedString = fixedUrl.getPath();
+		Assert.assertEquals("/Drift/TineKvalDok.nsf/0/A846E44615A41FDFC125710A00432CAC/$FILE/HACCP+Flytskjema+kjøkken.pdf", fixedString);
+		
+	}
 }

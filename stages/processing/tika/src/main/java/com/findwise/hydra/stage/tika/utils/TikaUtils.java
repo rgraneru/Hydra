@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 
 import com.findwise.hydra.common.Logger;
 import com.findwise.hydra.local.LocalDocument;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
 import org.apache.commons.codec.binary.Base64;
 
@@ -191,9 +192,25 @@ public class TikaUtils {
 	 * Adds basic authentication to the http connection
 	 */
 	public static void addBasicAuthentication(String username, String password, HttpURLConnection connection) {
-			String authString = username + ":" + password;
-			byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
-			String authStringEnc = new String(authEncBytes);
-			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
+		String authString = username + ":" + password;
+		byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+		String authStringEnc = new String(authEncBytes);
+		connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
+	}
+
+	public static URL fixStrangeNorwegianEncodingErrors(URL url) throws MalformedURLException, UnsupportedEncodingException {
+		String urlString = url.getPath();
+		urlString = urlDecode(urlString);
+		urlString = urlString.replaceAll(" ", "+");
+		URL returnUrl = new URL(url, urlString);
+		//gotta keep + for space
+		return returnUrl;
+	}
+	
+	public static String urlDecode(String url) throws UnsupportedEncodingException{
+		if (url.contains("%")){
+			return urlDecode(URLDecoder.decode(url, "utf-8"));
+		}
+			return url;
 	}
 }

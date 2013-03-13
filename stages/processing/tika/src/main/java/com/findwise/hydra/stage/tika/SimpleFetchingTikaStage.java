@@ -48,19 +48,22 @@ public class SimpleFetchingTikaStage extends AbstractProcessStage {
 				for (int i = 1; it.hasNext(); i++) {
 					String num = (i > 1) ? "" + i : "";
 					URL url = it.next();
+					url = TikaUtils.fixStrangeNorwegianEncodingErrors(url);
 					HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 					if (username != null && password != null) {
 						TikaUtils.addBasicAuthentication(username, password, connection);
-					}
+					}					
 					InputStream inputStream = (InputStream) connection.getInputStream();
 					TikaUtils.enrichDocumentWithFileContents(doc, field + num + "_",
 							inputStream, parser, addMetaData, addLanguage);
+					Logger.debug("Added content from: "+url.getPath());
+
 				}
 			} catch (URISyntaxException e) {
 				throw new ProcessException("A field matching the pattern " + field
 						+ " contained a malformed url", e);
 			} catch (IOException e) {
-				throw new ProcessException("Failed opening or reading from stream", e);
+				Logger.warn("Failed to find stream: "+e);
 			} catch (SAXException e) {
 				throw new ProcessException("Failed parsing document", e);
 			} catch (TikaException e) {
