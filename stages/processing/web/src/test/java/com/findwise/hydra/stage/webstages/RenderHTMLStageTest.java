@@ -4,11 +4,11 @@
  */
 package com.findwise.hydra.stage.webstages;
 
-import com.findwise.hydra.stage.webstages.RenderHTMLStage;
 import com.findwise.hydra.local.LocalDocument;
 import com.findwise.hydra.stage.RequiredArgumentMissingException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import junit.framework.Assert;
@@ -76,6 +76,38 @@ public class RenderHTMLStageTest {
 
 		Assert.assertFalse(htmlString.equals(ld.getContentField("html")));
 		Assert.assertFalse(htmlString.equals(ld.getContentField("body")));
+	}
+	
+	@Test
+	public void testProcessInputfieldContainsList() throws Exception {
+		InputStream is = RenderHTMLStageTest.class.getResourceAsStream("/htmlDocument.html");
+		StringWriter writer = new StringWriter();
+		IOUtils.copy(is, writer, "utf-8");
+		String htmlString = writer.toString();
+
+		RenderHTMLStage instance = new RenderHTMLStage();
+
+        List<String> inputFields = new LinkedList<String>();
+        inputFields.add("html");
+        inputFields.add("body");
+        instance.setFields(inputFields);
+
+		LocalDocument ld = new LocalDocument();
+		
+		List<String> list = new ArrayList();
+		list.add(htmlString);
+		list.add(htmlString);
+		
+		ld.putContentField("html", list);
+
+		instance.init();
+		instance.process(ld);
+
+		List<String> changedList = (List) ld.getContentField("html");
+		for (String changedListItem : changedList) {
+			Assert.assertFalse(htmlString.equals(changedListItem));			
+		}
+		Assert.assertNull(ld.getContentField("body"));
 	}
 
 	@Test(expected = RequiredArgumentMissingException.class)  

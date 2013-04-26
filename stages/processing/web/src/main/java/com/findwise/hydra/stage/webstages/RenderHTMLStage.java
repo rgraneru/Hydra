@@ -7,6 +7,7 @@ import com.findwise.hydra.stage.Parameter;
 import com.findwise.hydra.stage.ProcessException;
 import com.findwise.hydra.stage.RequiredArgumentMissingException;
 import com.findwise.hydra.stage.Stage;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,13 +30,22 @@ public class RenderHTMLStage extends AbstractProcessStage {
 	public void process(LocalDocument doc) throws ProcessException {
 
 		for (String field : fields) {
-			String stringToRender = (String) doc.getContentField(field);
-			if (stringToRender == null || stringToRender.isEmpty()) {
-				continue;
-			} else {
-				Source source = new Source(stringToRender);
-				String renderedString = source.getRenderer().toString();
-				doc.putContentField(field, renderedString);
+			Object objectToRender = doc.getContentField(field);
+			// if list then render all listItems
+			if (objectToRender instanceof List){
+				List<String> stringList = (List) objectToRender;
+				List<String> updatedList = new ArrayList();
+				int size = stringList.size();
+				for (int i = 0; i < size; i++) {
+					updatedList.add(i, render(stringList.get(i)));
+				}
+				doc.putContentField(field, updatedList);
+			}
+			else if (objectToRender instanceof String){
+				//assume string
+				String stringToRender = (String) doc.getContentField(field);
+				String rendered = render(stringToRender);
+				doc.putContentField(field, rendered);			
 			}
 		}
 	}
@@ -46,5 +56,15 @@ public class RenderHTMLStage extends AbstractProcessStage {
 
 	public void setFields(List<String> fields) {
 		this.fields = fields;
+	}
+
+	private String render(String stringToRender) {
+			if (stringToRender == null || stringToRender.isEmpty()) {
+				return null;
+			} else {
+				Source source = new Source(stringToRender);
+				String renderedString = source.getRenderer().toString();
+				return renderedString;
+			}
 	}
 }
